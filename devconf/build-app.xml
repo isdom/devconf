@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--ant 脚本文件 -->
+<!--author:maming -->
+<!--date:2009-08-31 -->
+
+<project xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+	<!--设置下面要用到的属性-->
+	<property environment="env" />
+	<property name="module.home" value="." />
+	<property name="module.main.src" value="${module.home}/src/main/java" />
+	<property name="module.main.resource" value="${module.home}/src/main/resource" />
+	<property name="module.main.resources" value="${module.home}/src/main/resources" />
+	<property name="module.units" value="${module.home}/units" />
+	<property name="module.test.src" value="${module.home}/src/test/java" />
+	<property name="module.test.resource" value="${module.home}/src/test/resource" />
+	<property name="module.test.resources" value="${module.home}/src/test/resources" />
+	<property name="module.target" value="${module.home}/../public/${module.name}" />
+	<property name="module.test.report" value="${module.target}/testreport" />
+    <property name="dist.bin" value="${module.target}/bin" />
+	<property name="compile.debug" value="on" />
+	<property name="compile.deprecation" value="false" />
+	<property name="compile.optimize" value="false" />
+	<property name="compile.encoding" value="UTF-8" />
+	<property name="compile.source" value="1.6" />
+	<property name="compile.target" value="1.6" />
+	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+    <property name="workspace.base" value="${module.home}/.." />
+
+	<!--设置时间截格式化变量，当生成.jar 发布文件时要用于定义文件名-->
+	<tstamp prefix="build.">
+		<format property="timeStamp" pattern="yyyyMMdd-HHmmss" />
+	</tstamp>
+
+	<!-- ivy:settings file="../allconf/ivysettings.xml" /-->
+    <ivy:settings url="http://stcdev.sky-mobi.com:8080/devconf/ivysettings.xml" />
+	
+    <!-- ================================= 
+          target: resolve              
+         ================================= -->
+    <target name="resolve" 
+    	description="--> retreive dependencies with ivy">
+        <ivy:retrieve 
+        	pattern="${module.target}/lib/[conf]/[artifact]-[revision]-[type].[ext]"
+            conf="compile,test,runtime"
+            type="jar,bundle" />
+    </target>    
+    
+    <!-- ================================= 
+          target: report              
+         ================================= -->
+    <target name="report" depends="resolve" 
+    	description="--> generates a report of dependencies">
+        <ivy:report todir="${module.target}/ivyreport"/>
+    </target>
+	
+	<!--设置类包的环境变量-->
+	<path id="compile.classpath">
+		<path location="${module.target}/src/classes" />
+		<path location="${module.target}/test/classes" />
+		<fileset dir="${module.target}/lib/compile">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+    <path id="test.classpath">
+        <path location="${module.target}/src/classes" />
+        <path location="${module.target}/test/classes" />
+        <fileset dir="${module.target}/lib/test">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+        	
+	<target name="usage" description="显示可选任务">
+		<echo message="Client Build 文件" />
+		<echo message="------------------------------------------------------" />
+		<echo message="" />
+		<echo message="可选Target:" />
+		<echo message="" />
+		<echo message="init          --&gt; 初始化${module.name}" />
+		<echo message="compile       --&gt; 编译源代码" />
+		<echo message="" />
+		<input message="请选择一个Target " validargs="init,compile" addproperty="ant.task" />
+		<antcall target="${ant.task}" />
+	</target>
+
+	<!--初始化目录-->
+	<target name="init">
+		<echo>+---------------------------------------------------+</echo>
+		<echo>|                                                   |</echo>
+		<echo>| B U I L D I N G   ${module.name}                  |</echo>
+		<echo>|                                                   |</echo>
+		<echo>+---------------------------------------------------+</echo>
+		<mkdir dir="${module.target}/src/classes" />
+		<mkdir dir="${module.target}/test/classes" />
+		<mkdir dir="${module.target}/source" />
+		<mkdir dir="${module.target}/resources" />
+		<mkdir dir="${module.target}/docs" />
+		<mkdir dir="${module.target}/manifest" />
+		<mkdir dir="${module.test.report}" />
+	</target>
+
+    <target name="hudson-dist-revision" if="env.SVN_REVISION">
+        <property name="dist.revision" value="${env.SVN_REVISION}" />
+    </target>
+    
+    <target name="default-dist-revision" unless="env.SVN_REVISION">
+        <property name="dist.revision" value="unformal" />
+    </target>
+    
+    <target name="hudson-dist-build-number" if="env.BUILD_NUMBER">
+        <property name="dist.build.number" value="${env.BUILD_NUMBER}" />
+    </target>
+    
+    <target name="default-dist-build-number" unless="env.BUILD_NUMBER">
+        <property name="dist.build.number" value="unknown" />
+    </target>
+        
+    <target name="hudson-dist-build-id" if="env.BUILD_ID">
+        <property name="dist.build.id" value="${env.BUILD_ID}" />
+    </target>
+    
+    <target name="default-dist-build-id" unless="env.BUILD_ID">
+        <property name="dist.build.id" value="${build.timeStamp}" />
+    </target>
+	
+    <target name="prepare-dep"
+        depends="hudson-dist-revision
+                ,default-dist-revision
+                ,hudson-dist-build-number
+                ,default-dist-build-number
+                ,hudson-dist-build-id
+                ,default-dist-build-id
+    	">
+    </target>
+	
+	<!--执行编译JAVA文件-->
+	<target name="compile" depends="init, prepare-dep, resolve, report">
+		<echo>编译源代码并拷贝资源文件</echo>
+		<javac srcdir="${module.main.src}" 
+			destdir="${module.target}/src/classes" 
+			source="${compile.source}" 
+			target="${compile.target}" 
+			debug="${compile.debug}" 
+			encoding="${compile.encoding}" 
+			failonerror="true"
+			includeAntRuntime="false">
+			<classpath refid="compile.classpath" />
+		</javac>
+
+		<!-- native2ascii encoding="gb2312" src="${module.main.resources}" 
+			dest="${module.target}/src/classes" includes="**/*.properties" /-->
+
+		<copy todir="${module.target}/src/classes">
+			<!--	兼容 src/main/resource & src/main/resources 两种目录布局 -->
+			<fileset dir="${module.main.resources}" erroronmissingdir="false">
+				<include name="**/*.*" />
+				<exclude name="**/*.properties" />
+				<exclude name="**/*.xml" />
+				<exclude name="**/*.cfg" />
+				<exclude name="**/*.bsh" />
+			</fileset>
+			
+			<fileset dir="${module.main.resource}" erroronmissingdir="false">
+				<include name="**/*.*" />
+				<exclude name="**/*.properties" />
+				<exclude name="**/*.xml" />
+				<exclude name="**/*.cfg" />
+				<exclude name="**/*.bsh" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="compile-test" depends="init">
+		<echo>编译测试类源代码并拷贝资源文件</echo>
+		<!--
+			<native2ascii encoding="gb2312" src="${module.test.resources}" dest="${module.target}/test/classes" includes="**/*.properties" ext="_zh_CN.properties" />
+			-->
+		<javac srcdir="${module.test.src}" 
+			destdir="${module.target}/test/classes" 
+			source="${compile.source}" 
+			target="${compile.target}" 
+			debug="${compile.debug}" 
+			encoding="${compile.encoding}" 
+			failonerror="false"
+			includeAntRuntime="false">
+			<classpath refid="test.classpath" />
+		</javac>
+		<copy todir="${module.target}/test/classes">
+			<!--	兼容 src/test/resource & src/test/resources 两种目录布局 -->
+			<fileset dir="${module.test.resources}"  erroronmissingdir="false">
+				<include name="**/*.*" />
+			</fileset>
+			<fileset dir="${module.test.resource}"  erroronmissingdir="false">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!--清理-->
+	<target name="clean-all">
+		<echo>清理项目..</echo>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${module.target}">
+				<exclude name=".svn" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="clean-deploy">
+		<echo>清理发布..</echo>
+		<delete includeEmptyDirs="true">
+			<fileset dir="${module.target}/src/classes">
+				<exclude name=".svn" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="run-test" depends="compile,compile-test">
+		<junit printsummary="yes" haltonfailure="yes">
+			<classpath refid="test.classpath" />
+	
+		  	<formatter type="xml"/>
+	
+			<batchtest fork="yes" todir="${module.test.report}">
+				<fileset dir="${module.test.src}">
+					<include name="stc/skymobi/**/*TestCase.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="update-manifest">
+		<copy todir="${module.target}/manifest">
+			<fileset dir="${module.home}/scripts/manifest" erroronmissingdir="false">
+				<include name="MANIFEST.MF" />
+			</fileset>
+		</copy>
+		
+        <manifest file="${module.target}/manifest/MANIFEST.MF" mode="update" >
+            <attribute name="Specification-Title" 
+                value="${module.name}"/>
+            <attribute name="Specification-Version" 
+                value="${module.version}"/>
+            <attribute name="Implementation-Title" 
+                value="${module.name}"/>
+            <attribute name="Implementation-Version"
+                value="${module.version}-${dist.build.number}-${dist.build.id}-[${dist.revision}]"/>
+            <attribute name="Specification-Vendor"
+                value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+            <attribute name="Implementation-Vendor"
+                value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+        </manifest>
+	</target>
+		
+	<target name="jar" depends="clean-all,compile,run-test,update-manifest">
+        <property name="module.jar.filename" 
+            value="${module.name}-${module.version}-${build.timeStamp}.jar" />
+            
+		<jar destfile="${module.target}/${module.jar.filename}"
+			manifest="${module.target}/manifest/MANIFEST.MF">
+		    
+			<fileset dir="${module.target}/src/classes">
+				<exclude name="**/*.xml" />
+				<exclude name="**/*.properties" />
+				<exclude name="**/*.cfg" />
+				<exclude name="**/*.bsh" />
+			</fileset>
+			
+			<!--	兼容 src/main/resource & src/main/resources 两种目录布局 -->
+			<fileset dir="${module.main.resources}" erroronmissingdir="false">
+				<include name="**/*.xml" />
+                <include name="**/*.bsh" />
+			</fileset>
+			
+			<fileset dir="${module.main.resource}" erroronmissingdir="false">
+				<include name="**/*.xml" />
+                <include name="**/*.bsh" />
+			</fileset>
+			
+			<metainf dir="${module.home}/scripts/metainf" erroronmissingdir="false">
+				<include name="**/*.*" />
+			</metainf>
+			
+			<!--	如 scripts/ 下 存在 wencontent, 则将这一目录下内容(包含子目录)全部打包到jar中, 
+				jar 中布局按照原始的相对目录 -->
+			<fileset dir="${module.home}/scripts/webcontent" erroronmissingdir="false">
+				<include name="**/*.*" />
+			</fileset>
+					
+            <restrict>
+                <name name="**/StcBooter.class"/>
+                <archives>
+                    <zips>
+                        <fileset dir="${module.target}/lib/compile" 
+                            includes="**/stc-unit-repo-*.jar"/>
+                    </zips>
+                </archives>
+            </restrict>
+            	
+		    <restrict>
+		        <name name="**/JVMUtil.class"/>
+		        <archives>
+                    <zips>
+                        <fileset dir="${module.target}/lib/compile" 
+                        	includes="**/stc-util-*.jar"/>
+                    </zips>
+                </archives>
+		    </restrict>
+			
+            <restrict>
+                <name name="**/JMXStatusBooter.class"/>
+                <archives>
+                    <zips>
+                        <fileset dir="${module.target}/lib/compile" 
+                            includes="**/stc-jmx-*.jar"/>
+                    </zips>
+                </archives>
+            </restrict>
+            	
+            <restrict>
+                <name name="**/JVMUtil.class"/>
+                <archives>
+                    <zips>
+                        <fileset dir="${module.target}/lib/compile" 
+                            includes="**/skymobi-toolkit-*.jar"/>
+                    </zips>
+                </archives>
+            </restrict>
+			
+            <restrict>
+                <name name="**/JMXStatusBooter.class"/>
+                <archives>
+                    <zips>
+                        <fileset dir="${module.target}/lib/compile" 
+                            includes="**/skymobi-toolkit-*.jar"/>
+                    </zips>
+                </archives>
+            </restrict>
+		</jar>
+		
+		<copy todir="${module.target}/resources">
+			<!--	兼容 src/main/resource & src/main/resources 两种目录布局 -->
+			<fileset dir="${module.main.resources}"  erroronmissingdir="false"/>
+			<fileset dir="${module.main.resource}"  erroronmissingdir="false"/>
+		</copy>
+	</target>
+
+	<target name="jar-test" depends="jar,compile-test">
+        <property name="module.jar.test.filename" 
+            value="${module.name}-test-${module.version}-${build.timeStamp}.jar" />
+            	
+		<jar destfile="${module.target}/${module.jar.test.filename}">
+			<fileset dir="${module.target}/test/classes">
+				<exclude name="**/*.xml" />
+				<exclude name="**/*.properties" />
+			</fileset>
+		</jar>
+	</target>
+	
+	
+	<target name="source-jar" depends="jar">
+        <property name="module.srcjar.filename" 
+            value="${module.name}-${module.version}-${build.timeStamp}-source.jar" />
+	
+		<copy todir="${module.target}/source">
+			<fileset dir="${module.main.src}">
+			</fileset>
+		</copy>
+		<copy todir="${module.target}/source">
+			<!--	兼容 src/main/resource & src/main/resources 两种目录布局 -->
+			<fileset dir="${module.main.resources}" erroronmissingdir="false"/>
+			<fileset dir="${module.main.resource}" erroronmissingdir="false"/>
+		</copy>
+		<jar basedir="${module.target}/source" 
+			destfile="${module.target}/${module.srcjar.filename}">
+			
+			<manifest>
+                <attribute name="Specification-Title" 
+                    value="${module.name}"/>
+			    <attribute name="Specification-Version" 
+			    	value="${module.version}"/>
+                <attribute name="Implementation-Title" 
+                    value="${module.name}"/>
+                <attribute name="Implementation-Version"
+                    value="${module.version}-${dist.build.number}-${dist.build.id}-[${dist.revision}]"/>
+                <attribute name="Specification-Vendor"
+                    value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+                <attribute name="Implementation-Vendor"
+                    value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+		  	</manifest>
+		</jar>
+	</target>
+	
+	<target name="doc-jar" depends="jar">
+        <property name="module.docjar.filename" 
+            value="${module.name}-${module.version}-${build.timeStamp}-doc.jar" />
+		
+	 	<javadoc sourcepath="${module.main.src}"
+	           	destdir="${module.target}/docs"
+	           	author="true"
+	           	version="true"
+	           	use="true"
+	 			encoding="UTF-8"
+	 			charset="UTF-8"
+		 		private="true"
+	 		>
+	 		<classpath refid="compile.classpath" />
+            <doclet name="org.jboss.apiviz.APIviz" 
+            	path="${ant.library.dir}/apiviz-1.3.1.GA.jar"/>
+	  	</javadoc>
+		
+		<jar basedir="${module.target}/docs" 
+			destfile="${module.target}/${module.docjar.filename}">
+			
+			<manifest>
+                <attribute name="Specification-Title" 
+                    value="${module.name}"/>
+                <attribute name="Specification-Version" 
+                    value="${module.version}"/>
+                <attribute name="Implementation-Title" 
+                    value="${module.name}"/>
+                <attribute name="Implementation-Version"
+                    value="${module.version}-${dist.build.number}-${dist.build.id}-[${dist.revision}]"/>
+                <attribute name="Specification-Vendor"
+                    value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+                <attribute name="Implementation-Vendor"
+                    value="SKY NETWORK TECHNOLOGIES CO.,LTD"/>
+		  	</manifest>
+		</jar>
+	</target>
+	
+	<target name="make-bin" depends="jar">
+        <mkdir dir="${dist.bin}" />
+		
+        <copy tofile="${dist.bin}/${module.name}.jar" 
+            file="${module.target}/${module.jar.filename}"
+            overwrite="true"
+        />
+	</target>
+	
+    <target name="make-dist" 
+        depends="make-bin,doc-jar">
+        <property name="dist.purefilename" 
+            value="${module.name}-${module.version}-${dist.build.number}-${dist.build.id}-scm-${dist.revision}" />
+    	
+        <property name="dist.filename" 
+            value="${dist.purefilename}.zip" />
+        
+    	<chmod perm="777" type="file">
+    	    <fileset dir="${module.home}/scripts/sh" erroronmissingdir="false">
+	    	    <include name="*.sh"/>
+    	  </fileset>
+    	</chmod>
+    	
+    	<delete includeEmptyDirs="true" failonerror="false">
+            <fileset dir="${module.home}" includes="${module.name}-*.zip"/>
+        </delete>
+    	
+    	<echo file="${module.target}/${dist.purefilename}.txt" append="false">distribution version
+    	</echo>
+    
+        <zip destfile="${module.home}/${dist.filename}" level="9" preserve0permissions="true">
+        	
+            <mappedresources> 
+                <restrict>
+                    <name name="${module.name}.jar"/>
+                    <fileset erroronmissingdir="false"
+                        dir="${dist.bin}" />
+                </restrict>
+                <globmapper from="*" to="bin/*"/> 
+            </mappedresources> 
+        	
+        	<mappedresources> 
+                <restrict>
+                    <name name="*.sh"/>
+                    <fileset erroronmissingdir="false"
+                    	dir="${module.home}/scripts/sh" />
+                </restrict>
+        	    <globmapper from="*" to="bin/*"/> 
+        	</mappedresources> 
+        	
+            <mappedresources> 
+                <restrict>
+                    <name name="*.bsh"/>
+                    <fileset erroronmissingdir="false"
+                        dir="${module.home}/scripts/bsh" />
+                </restrict>
+                <globmapper from="*" to="bin/bsh/*"/> 
+            </mappedresources> 
+        	
+            <mappedresources> 
+                <restrict>
+                    <name name="**/*-jar.jar" handledirsep="true" />
+                    <fileset erroronmissingdir="false"
+                        dir="${module.target}/lib/runtime" />
+                </restrict>
+                <globmapper from="*" to="lib/*"/> 
+            </mappedresources> 
+                	
+            <mappedresources> 
+                <restrict>
+                    <name name="**/*-bundle.jar" handledirsep="true" />
+                    <fileset erroronmissingdir="false"
+                        dir="${module.target}/lib/runtime" />
+                </restrict>
+                <globmapper from="*" to="lib/*"/> 
+            </mappedresources> 
+			
+            <mappedresources> 
+                <restrict>
+                    <name name="**/*.cfg" handledirsep="true" />
+                    <fileset erroronmissingdir="false"
+                        dir="${module.units}" />
+                </restrict>
+                <globmapper from="*" to="units/*"/> 
+            </mappedresources> 
+            	
+            <mappedresources> 
+                <restrict>
+                    <name name="**/*.bsh" handledirsep="true" />
+                    <fileset erroronmissingdir="false"
+                        dir="${module.units}" />
+                </restrict>
+                <globmapper from="*" to="units/*"/> 
+            </mappedresources> 
+            	
+            <mappedresources> 
+                <restrict>
+                    <name name="*.properties"/>
+                    <fileset dir="${module.main.resources}" 
+                    	erroronmissingdir="false"/>
+                </restrict>
+                <globmapper from="*" to="bin/*"/> 
+            </mappedresources> 
+        	
+			<!-- add by maming. 2012.10.10
+				兼容 src/main/resource & src/main/resources 两种目录布局 -->
+            <mappedresources> 
+                <restrict>
+                    <name name="*.properties"/>
+                    <fileset dir="${module.main.resource}" 
+                    	erroronmissingdir="false"/>
+                </restrict>
+                <globmapper from="*" to="bin/*"/> 
+            </mappedresources> 
+            	
+            <mappedresources> 
+                <restrict>
+                    <name name="*.sql"/>
+                    <fileset erroronmissingdir="false"
+                        dir="${module.home}/scripts/sql" />
+                </restrict>
+                <globmapper from="*" to="scripts/*"/> 
+            </mappedresources> 
+        	
+            <mappedresources> 
+                <restrict>
+                    <name name="*.xml"/>
+                    <fileset erroronmissingdir="false"
+                        dir="${module.home}/scripts/hyperic" />
+                </restrict>
+                <globmapper from="*" to="hyperic/*"/> 
+            </mappedresources> 
+            
+            <mappedresources> 
+                <restrict>
+                    <name name="*-doc.jar"/>
+                    <fileset erroronmissingdir="false"
+                        dir="${module.target}/" />
+                </restrict>
+                <globmapper from="*" to="doc/*"/> 
+            </mappedresources> 
+    	
+            <mappedresources> 
+                <restrict>
+                    <name name="*.xml"/>
+                    <fileset erroronmissingdir="false"
+                    	dir="${module.home}/scripts/logback" />
+                </restrict>
+                <globmapper from="*" to="bin/*"/> 
+            </mappedresources> 
+        	
+            <restrict>
+                <name name="${dist.purefilename}.txt"/>
+                <fileset erroronmissingdir="false"
+                    dir="${module.target}/" />
+            </restrict>
+            	
+        </zip>
+    </target>
+	
+    <!-- ================================= 
+          target: publish-snapshot              
+         ================================= -->
+    <target name="publish-snapshot" depends="make-dist,jar,source-jar,doc-jar" 
+        description="--> publish this project in the ivy repository">
+        <property name="snapshot.dir" 
+            value="${module.target}/snapshot" />
+        
+        <copy tofile="${snapshot.dir}/${module.name}-snapshot-jar.jar" 
+            file="${module.target}/${module.jar.filename}"
+            overwrite="true"
+        />
+        
+        <copy tofile="${snapshot.dir}/${module.name}-snapshot-source.jar" 
+            file="${module.target}/${module.srcjar.filename}"
+            overwrite="true"
+        />
+                
+        <copy tofile="${snapshot.dir}/${module.name}-snapshot-javadoc.jar" 
+            file="${module.target}/${module.docjar.filename}"
+            overwrite="true"
+        />
+    	
+        <copy tofile="${snapshot.dir}/${module.name}-snapshot-distribution.zip" 
+            file="${module.home}/${dist.filename}"
+            overwrite="true"
+        />
+        
+        <ivy:publish 
+            artifactspattern="${snapshot.dir}/[artifact]-snapshot-[type].[ext]" 
+            resolver="share-snapshot"
+            pubrevision="snapshot" 
+            update="true" overwrite="true"
+            status="snapshot">
+        </ivy:publish>
+    </target>
+    
+    <!-- ================================= 
+          target: publish-release              
+         ================================= -->
+    <target name="publish-release" depends="make-dist,jar,source-jar,doc-jar" 
+        description="--> publish this project in the ivy repository">
+        <property name="release.dir" 
+            value="${module.target}/release" />
+        
+        <copy tofile="${release.dir}/${module.name}-${module.version}-jar.jar" 
+            file="${module.target}/${module.jar.filename}"
+            overwrite="true"
+        />
+        
+        <copy tofile="${release.dir}/${module.name}-${module.version}-source.jar" 
+            file="${module.target}/${module.srcjar.filename}"
+            overwrite="true"
+        />
+                
+        <copy tofile="${release.dir}/${module.name}-${module.version}-javadoc.jar" 
+            file="${module.target}/${module.docjar.filename}"
+            overwrite="true"
+        />
+        
+        <copy tofile="${release.dir}/${module.name}-${module.version}-distribution.zip" 
+            file="${module.home}/${dist.filename}"
+            overwrite="true"
+        />
+    	
+        <ivy:publish resolver="share-release"
+            artifactspattern="${release.dir}/[artifact]-[revision]-[type].[ext]"
+            srcivypattern="${module.home}/ivy.xml"
+            pubrevision="${module.version}" 
+            update="true" overwrite="true"
+            status="release" />
+    </target>
+
+</project>

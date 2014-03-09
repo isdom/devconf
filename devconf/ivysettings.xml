@@ -1,0 +1,37 @@
+<!--
+-->
+<ivysettings>
+	<property name="repo.urlbase" value="http://stcdev.sky-mobi.com:8080/nexus/content"/>
+    <settings defaultResolver="default"/>
+    <properties file="${user.home}/ivysettings-file.properties" />
+    <credentials host="stcdev.sky-mobi.com"
+        realm="Sonatype Nexus Repository Manager" 
+        username="${user.name}"  passwd="${user.passwd}" />
+    <resolvers>
+        <chain name="default" returnFirst="true">
+            <url name="inner-snapshot" m2compatible="true" checkconsistency="false">
+                <ivy pattern="${repo.urlbase}/repositories/snapshots/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="${repo.urlbase}/repositories/snapshots/[organisation]/[module]/[revision]/[artifact]-[revision]-[type].[ext]" />
+            </url>
+            <url name="inner-release" m2compatible="true">
+                <ivy pattern="${repo.urlbase}/repositories/releases/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="${repo.urlbase}/repositories/releases/[organisation]/[module]/[revision]/[artifact]-[revision]-[type].[ext]" />
+            </url>
+            <ibiblio name="public" m2compatible="true" 
+                root="${repo.urlbase}/groups/public/"
+                />
+        </chain>
+        <!-- ibiblio name="share-snapshot" m2compatible="true" 
+            root="${repo.urlbase}/repositories/snapshots/"/ -->
+        <!-- ibiblio name="share-release" m2compatible="true" 
+            root="${repo.urlbase}/repositories/releases/"/ -->
+        <url name="share-snapshot" m2compatible="true">
+            <ivy pattern="${repo.urlbase}/repositories/snapshots/[organisation]/[module]/snapshot/ivy-snapshot.xml" />
+            <artifact pattern="${repo.urlbase}/repositories/snapshots/[organisation]/[module]/snapshot/[artifact]-snapshot-[type].[ext]" />
+        </url>
+        <url name="share-release" m2compatible="true">
+            <ivy pattern="${repo.urlbase}/repositories/releases/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+            <artifact pattern="${repo.urlbase}/repositories/releases/[organisation]/[module]/[revision]/[artifact]-[revision]-[type].[ext]" />
+        </url>
+    </resolvers>
+</ivysettings>
