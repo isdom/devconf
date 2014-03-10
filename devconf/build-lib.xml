@@ -24,14 +24,15 @@
 	<property name="compile.target" value="1.6" />
 	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
     <property name="workspace.base" value="${module.home}/.." />
+    <property name="ivy.settings" value="https://raw.github.com/isdom/devsetup/master/devconf/ivysettings.xml" />
 
 	<!--设置时间截格式化变量，当生成.jar 发布文件时要用于定义文件名-->
 	<tstamp prefix="build.">
 		<format property="timeStamp" pattern="yyyyMMdd-HHmmss" />
 	</tstamp>
 
-	<!-- ivy:settings file="../allconf/ivysettings.xml" / -->
-    <ivy:settings url="https://raw.github.com/isdom/devsetup/master/devconf/ivysettings.xml" />
+	<!-- ivy:settings file="../../../../git/devsetup/devconf/ivysettings.xml" / -->
+    <ivy:settings url="${ivy.settings}" />
 	
     <!-- ================================= 
           target: resolve              
@@ -383,25 +384,25 @@
         <property name="snapshot.dir" 
             value="${module.target}/snapshot" />
     	
-        <copy tofile="${snapshot.dir}/${module.name}-snapshot-jar.jar" 
+        <copy tofile="${snapshot.dir}/${module.name}-${module.version}-SNAPSHOT-jar.jar" 
             file="${module.target}/${module.jar.filename}"
             overwrite="true"
         />
         
-        <copy tofile="${snapshot.dir}/${module.name}-snapshot-source.jar" 
+        <copy tofile="${snapshot.dir}/${module.name}-${module.version}-SNAPSHOT-source.jar" 
             file="${module.target}/${module.srcjar.filename}"
             overwrite="true"
         />
                 
-        <copy tofile="${snapshot.dir}/${module.name}-snapshot-javadoc.jar" 
+        <copy tofile="${snapshot.dir}/${module.name}-${module.version}-SNAPSHOT-javadoc.jar" 
             file="${module.target}/${module.docjar.filename}"
             overwrite="true"
         />
     	
         <ivy:publish 
-        	artifactspattern="${snapshot.dir}/[artifact]-snapshot-[type].[ext]" 
+        	artifactspattern="${snapshot.dir}/[artifact]-[revision]-[type].[ext]" 
             resolver="share-snapshot"
-            pubrevision="snapshot" 
+            pubrevision="${module.version}-SNAPSHOT" 
             update="true" overwrite="true"
             status="snapshot">
         </ivy:publish>
