@@ -1,10 +1,11 @@
 <!--
 -->
 <ivysettings>
-	<property name="repo.urlbase" value="http://stcdev.sky-mobi.com:8080/nexus/content"/>
+    <!-- define repo.urlbase in ivysettings-file.properties -->
+	<!-- property name="repo.urlbase" value="http://stcdev.sky-mobi.com:8080/nexus/content"/ -->
     <settings defaultResolver="default"/>
     <properties file="${user.home}/ivysettings-file.properties" />
-    <credentials host="stcdev.sky-mobi.com"
+    <credentials host="${repo.host}"
         realm="Sonatype Nexus Repository Manager" 
         username="${user.name}"  passwd="${user.passwd}" />
     <resolvers>

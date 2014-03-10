@@ -31,7 +31,7 @@
 	</tstamp>
 
 	<!-- ivy:settings file="../allconf/ivysettings.xml" / -->
-    <!-- ivy:settings url="http://stcdev.sky-mobi.com:8080/devconf/ivysettings.xml" / -->
+    <ivy:settings url="https://raw.github.com/isdom/devsetup/master/devconf/ivysettings.xml" />
 	
     <!-- ================================= 
           target: resolve              
