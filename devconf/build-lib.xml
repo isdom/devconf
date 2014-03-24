@@ -24,7 +24,7 @@
 	<property name="compile.target" value="1.6" />
 	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
     <property name="workspace.base" value="${module.home}/.." />
-    <property name="ivy.settings" value="https://raw.github.com/isdom/devsetup/master/devconf/ivysettings.xml" />
+    <!-- property name="ivy.settings" value="${ivysettings.url}/ivysettings.xml" /-->
 
 	<!--设置时间截格式化变量，当生成.jar 发布文件时要用于定义文件名-->
 	<tstamp prefix="build.">
