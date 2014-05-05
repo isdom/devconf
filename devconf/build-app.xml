@@ -24,7 +24,7 @@
 	<property name="compile.encoding" value="UTF-8" />
 	<property name="compile.source" value="1.6" />
 	<property name="compile.target" value="1.6" />
-	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+	<property name="build.compiler" value="modern" />
     <property name="workspace.base" value="${module.home}/.." />
 
 	<tstamp prefix="build.">
