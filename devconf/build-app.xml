@@ -133,8 +133,11 @@
     	">
     </target>
 	
+	<!-- 在compile之前执行,在build.xml可以进行覆盖-->
+	<target name="pre-compile"/>
+
 	<!--执行编译JAVA文件-->
-	<target name="compile" depends="init, prepare-dep, resolve, report">
+	<target name="compile" depends="init, prepare-dep, resolve, report, pre-compile">
 		<echo>编译源代码并拷贝资源文件</echo>
 		<javac srcdir="${module.main.src}" 
 			destdir="${module.target}/src/classes" 
