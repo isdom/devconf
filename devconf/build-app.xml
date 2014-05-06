@@ -582,7 +582,12 @@
                 </restrict>
                 <globmapper from="*" to="bin/*"/> 
             </mappedresources> 
-        	
+       	    <mappedresources>
+		   <restrict>
+			<fileset erroronmissingdir="false" dir="${module.home}/scripts/binext" />
+		   </restrict>
+		 <globmapper from="*" to="bin/*" />
+	    </mappedresources>
             <restrict>
                 <name name="${dist.purefilename}.txt"/>
                 <fileset erroronmissingdir="false"
