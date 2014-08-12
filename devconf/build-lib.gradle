@@ -1,0 +1,160 @@
+apply plugin: 'maven'
+
+buildDir = "../public/${moduleName}"
+
+ext {
+    distRevision = System.env.SVN_REVISION ? "${System.env.SVN_REVISION}" : "unformal"
+    distBuildNumber = System.env.BUILD_NUMBER ? "${System.env.BUILD_NUMBER}" : "unknown"
+    distBuildId = System.env.BUILD_ID ? "${System.env.BUILD_ID}" : System.currentTimeMillis()
+    Properties props = new Properties()
+    props.load(new FileInputStream("${System.properties['user.home']}/ivysettings-file.properties"))
+    userName = props['user.name']
+    password = props['user.passwd']
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    configurations {
+        optional
+        compile.extendsFrom optional
+    }
+    repositories {
+        maven {
+            url "http://hbdev.widget-inc.com:8080/nexus/content/groups/public"
+        }
+        mavenCentral()
+        ivy {
+            url "http://hbdev.widget-inc.com:8080/nexus/content/groups/public"
+            layout "pattern", {
+                artifact "[organisation]/[module]/[revision]/[artifact]-[revision].xml"
+                artifact "[organisation]/[module]/[revision]/[artifact]-[revision](-[type]).[ext]"
+                m2compatible = true
+            }
+        }
+    }
+    dependencies {
+        components {
+            eachComponent { details ->
+                details.statusScheme = ["snapshot", "integration", "milestone", "release"]
+            }
+        }
+    }
+    sourceSets {
+        main {
+            resources {
+                srcDirs 'src/main/resources', 'src/main/resource'
+            }
+        }
+    }
+    idea {
+        module {
+            excludeDirs = []
+            [".idea", ".gradle", '.settings'].each {
+                excludeDirs << file("$it")
+            }
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.debug = "on"
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+    options.charSet = "UTF-8"
+}
+
+task cleanAll << {
+    println "Clean project.."
+    delete buildDir
+}
+
+task init << {
+    println '+---------------------------------------------------+'
+    println '|                                                   |'
+    println "| B U I L D I N G $moduleName $version"
+    println '|                                                   |'
+    println '+---------------------------------------------------+'
+}
+
+compileJava.dependsOn init
+
+compileJava.doFirst {
+    println 'Compile Java and copy resources'
+}
+
+jar {
+    manifest {
+        attributes("Specification-Title": moduleName, "Specification-Version": version)
+        attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildId-$distRevision")
+    }
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task publish(dependsOn: [cleanAll, jar, uploadArchives]) << {
+    println "Publish $moduleName $version SUCCESS"
+}
+
+task publishSnapshot(dependsOn: [cleanAll, jar, uploadArchives]) << {
+    println "Publish $moduleName $version SUCCESS"
+}
+
+artifacts {
+    archives jar
+    archives sourceJar
+    archives javadocJar
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(publishSnapshot) && !version.endsWith('-SNAPSHOT')) {
+        version += '-SNAPSHOT'
+    }
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                repository(url: 'http://hbdev.widget-inc.com:8080/nexus/content/repositories/releases') {
+                    authentication(userName: userName, password: password)
+                }
+                snapshotRepository(url: 'http://hbdev.widget-inc.com:8080/nexus/content/repositories/snapshots') {
+                    authentication(userName: userName, password: password)
+                }
+                uniqueVersion = false
+                pom.artifactId = moduleName
+            }
+        }
+    }
+}
+
+
+// Add a temporary new optional scope
+Conf2ScopeMappingContainer scopeMappings = project.conf2ScopeMappings
+scopeMappings.addMapping(MavenPlugin.COMPILE_PRIORITY + 2, project.configurations.getByName("optional"), "optional")
+// Add a hook to replace the optional scope
+project.tasks.withType(Upload).each { applyToUploadTask(project, it) }
+
+private void applyToUploadTask(Project project, Upload upload) {
+    upload.repositories.withType(PomFilterContainer).each { applyToPom(project, it) }
+}
+
+private void applyToPom(Project project, PomFilterContainer pomContainer) {
+    pomContainer.pom.whenConfigured { MavenPom pom ->
+        pom.dependencies.findAll { it.scope == "optional" }.each {
+            it.scope = "compile"
+            it.optional = true
+        }
+    }
+}
