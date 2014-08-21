@@ -102,7 +102,7 @@ jar {
     archiveName = "${moduleName}.jar"
 }
 
-task makeDist(dependsOn: [jar], type: Zip) {
+task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     into('bin') {
         from jar
         from(sourceSets.main.resources) {
