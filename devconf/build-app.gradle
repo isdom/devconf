@@ -19,10 +19,10 @@ allprojects {
     }
     repositories {
         maven {
-            url "http://dev.jocean.org:8080/nexus/content/groups/public"
+            url "http://112.126.72.60:8080/nexus/content/groups/public"
         }
         ivy {
-            url "http://dev.jocean.org:8080/nexus/content/groups/public"
+            url "http://112.126.72.60:8080/nexus/content/groups/public"
             layout "pattern", {
                 artifact "[organisation]/[module]/[revision]/[artifact]-[revision].xml"
                 artifact "[organisation]/[module]/[revision]/[artifact]-[revision](-[type]).[ext]"
