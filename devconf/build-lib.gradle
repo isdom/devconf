@@ -36,7 +36,7 @@ allprojects {
     }
     dependencies {
         components {
-            eachComponent { details ->
+            all { details ->
                 details.statusScheme = ["snapshot", "integration", "milestone", "release"]
             }
         }
@@ -54,6 +54,12 @@ allprojects {
             [".idea", ".gradle", '.settings'].each {
                 excludeDirs << file("$it")
             }
+        }
+    }
+    eclipse {
+        classpath {
+           downloadSources=true
+           downloadJavadoc = true
         }
     }
 }
