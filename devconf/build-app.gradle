@@ -5,7 +5,8 @@ buildDir = "../public/${moduleName}"
 ext {
     distRevision = System.env.SVN_REVISION ? "${System.env.SVN_REVISION}" : "unformal"
     distBuildNumber = System.env.BUILD_NUMBER ? "${System.env.BUILD_NUMBER}" : "unknown"
-    distBuildId = System.env.BUILD_ID ? "${System.env.BUILD_ID}" : System.currentTimeMillis()
+    distBuildId = new java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new java.util.Date())
+    //System.env.BUILD_ID ? "${System.env.BUILD_ID}" : System.currentTimeMillis()
     distPureFileName = "$moduleName-$version-$distBuildNumber-$distBuildId-scm-$distRevision"
     includeToBin = ((ext.has('includeToBin') ? includeToBin : []) << ['*.properties','logback.xml']).flatten()
 }
