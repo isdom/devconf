@@ -42,7 +42,7 @@ allprojects {
     sourceSets {
         main {
             resources {
-                srcDirs 'src/main/resources', 'src/main/resource', 'scripts/logback'
+                srcDirs 'src/main/resources', 'src/main/resource', 'scripts/logback', 'scripts/webcontent'
             }
         }
     }
