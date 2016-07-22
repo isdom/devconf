@@ -10,6 +10,7 @@ ext {
     props.load(new FileInputStream("${System.properties['user.home']}/ivysettings-file.properties"))
     userName = props['user.name']
     password = props['user.passwd']
+    uploadUrlbase=props['upload.urlbase']
 }
 
 allprojects {
@@ -133,10 +134,10 @@ gradle.taskGraph.whenReady { taskGraph ->
     uploadArchives {
         repositories {
             mavenDeployer {
-                repository(url: 'http://nexus.jocean.org/nexus/content/repositories/releases') {
+                repository(url: uploadUrlbase+'/repositories/releases') {
                     authentication(userName: userName, password: password)
                 }
-                snapshotRepository(url: 'http://nexus.jocean.org/nexus/content/repositories/snapshots') {
+                snapshotRepository(url: uploadUrlbase+'/repositories/snapshots') {
                     authentication(userName: userName, password: password)
                 }
                 uniqueVersion = false
