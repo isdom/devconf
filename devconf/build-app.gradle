@@ -131,12 +131,12 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     into('lib') {
         from configurations.runtime
     }
-    from "$buildDir/${distPureFileName}.txt"
+    from "$buildDir/version.txt"
     archiveName = "${distPureFileName}.zip"
     destinationDir = rootDir
 }
 
 makeDist.doFirst {
-    new File("$buildDir/${distPureFileName}.txt").text = 'distribution version'
+    new File("$buildDir/version.txt").text = 'distPureFileName'
     new File('.').eachFileMatch(~"$moduleName-.*\\.zip") { it.delete() }
 }
