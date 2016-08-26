@@ -137,6 +137,6 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
 }
 
 makeDist.doFirst {
-    new File("$buildDir/version.txt").text = 'distPureFileName'
+    new File("$buildDir/version.txt").text = "${distPureFileName}"
     new File('.').eachFileMatch(~"$moduleName-.*\\.zip") { it.delete() }
 }
