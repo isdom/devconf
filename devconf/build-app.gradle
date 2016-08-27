@@ -132,6 +132,7 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
         from configurations.runtime
     }
     from "$buildDir/version.txt"
+    from "scripts/appspec.yml"
     archiveName = "${distPureFileName}.zip"
     destinationDir = rootDir
 }
