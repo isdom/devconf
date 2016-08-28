@@ -132,6 +132,7 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
         from configurations.runtime
     }
     from "$buildDir/version.txt"
+    from "$buildDir/module.txt"
     from "scripts/appspec.yml"
     archiveName = "${distPureFileName}.zip"
     destinationDir = rootDir
@@ -139,5 +140,6 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
 
 makeDist.doFirst {
     new File("$buildDir/version.txt").text = "${distPureFileName}"
+    new File("$buildDir/module.txt").text = "${moduleName}"
     new File('.').eachFileMatch(~"$moduleName-.*\\.zip") { it.delete() }
 }
