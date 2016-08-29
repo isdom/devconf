@@ -137,7 +137,7 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     }
     from "$buildDir/version.txt"
     from "$buildDir/module.txt"
-    from "scripts/appspec.yml"
+    from "$buildDir/appspec.yml"
     archiveName = "${distPureFileName}.zip"
     destinationDir = rootDir
 }
@@ -145,5 +145,28 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
 makeDist.doFirst {
     new File("$buildDir/version.txt").text = "${distPureFileName}"
     new File("$buildDir/module.txt").text = "${moduleName}"
+    new File("$buildDir/appspec.yml").text = 
+        "version: 0.0\r\n"
+        +"os: linux\r\n"
+        +"files:\r\n"
+        +"  - source: /\r\n"
+        +"    destination: /home/${moduleName}/current\r\n"
+        +"hooks:\r\n"
+        +"  ApplicationStop:\r\n"
+        +"    - location: codedeploy/stopAndBackup.sh\r\n"
+        +"      timeout: 300\r\n"
+        +"      runas: root\r\n"
+        +"  BeforeInstall:\r\n"
+        +"    - location: codedeploy/install_dependencies.sh\r\n"
+        +"      timeout: 300\r\n"
+        +"      runas: root\r\n"
+        +"  AfterInstall:\r\n"
+        +"    - location: codedeploy/configure.sh\r\n"
+        +"      timeout: 300\r\n"
+        +"      runas: root\r\n"
+        +"  ApplicationStart:\r\n"
+        +"    - location: codedeploy/start.sh\r\n"
+        +"      timeout: 300\r\n"
+        +"      runas: ${moduleName}\r\n"
     new File('.').eachFileMatch(~"$moduleName-.*\\.zip") { it.delete() }
 }
