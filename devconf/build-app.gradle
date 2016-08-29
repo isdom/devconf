@@ -131,6 +131,9 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     into('lib') {
         from configurations.runtime
     }
+    into('codedeploy') {
+        from "scripts/codedeploy"
+    }
     from "$buildDir/version.txt"
     from "$buildDir/module.txt"
     from "scripts/appspec.yml"
