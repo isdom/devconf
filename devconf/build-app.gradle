@@ -119,8 +119,11 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
         }
     }
     into('bin') {
-        from "scripts/sh"
+        from "~/.scripts/sh"
         fileMode 0755
+    }
+    into('codedeploy') {
+        from "~/.scripts/codedeploy"
     }
     into('bin/bsh') {
         from "scripts/bsh"
@@ -130,9 +133,6 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     }
     into('lib') {
         from configurations.runtime
-    }
-    into('codedeploy') {
-        from "scripts/codedeploy"
     }
     from "$buildDir/version.txt"
     from "$buildDir/module.txt"
