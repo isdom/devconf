@@ -119,11 +119,12 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
         }
     }
     into('bin') {
-        from "~/.scripts/sh"
+        from System.getProperty("user.home") + "/.scripts/sh"
         fileMode 0755
     }
     into('codedeploy') {
-        from "~/.scripts/codedeploy"
+        from System.getProperty("user.home") + "/.scripts/codedeploy"
+        fileMode 0755
     }
     into('bin/bsh') {
         from "scripts/bsh"
