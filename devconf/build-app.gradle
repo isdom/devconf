@@ -140,6 +140,7 @@ task makeDist(dependsOn: [jar,javadoc], type: Zip) {
     from "$buildDir/appspec.yml"
     archiveName = "${distPureFileName}.zip"
     destinationDir = rootDir
+    duplicatesStrategy = exclude
 }
 
 makeDist.doFirst {
