@@ -59,7 +59,7 @@ allprojects {
     }
     eclipse {
         classpath {
-           downloadSources=true
+           downloadSources = true
            downloadJavadoc = true
         }
     }
