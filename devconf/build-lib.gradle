@@ -3,9 +3,8 @@ apply plugin: 'maven'
 buildDir = "../public/${moduleName}"
 
 ext {
-    distRevision = System.env.SVN_REVISION ? "${System.env.SVN_REVISION}" : "unformal"
     distBuildNumber = System.env.BUILD_NUMBER ? "${System.env.BUILD_NUMBER}" : "unknown"
-    distBuildId = System.env.BUILD_ID ? "${System.env.BUILD_ID}" : System.currentTimeMillis()
+    distBuildTimestamp = new java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new java.util.Date())
     Properties props = new Properties()
     props.load(new FileInputStream("${System.properties['user.home']}/ivysettings-file.properties"))
     userName = props['user.name']
@@ -89,13 +88,6 @@ compileJava.doFirst {
     println 'Compile Java and copy resources'
 }
 
-jar {
-    manifest {
-        attributes("Specification-Title": moduleName, "Specification-Version": version)
-        attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildId-$distRevision")
-    }
-}
-
 task sourceJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allJava
@@ -106,11 +98,11 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-task publish(dependsOn: [cleanAll, jar, uploadArchives]) << {
+task publish(dependsOn: [cleanAll, jar, uploadArchives]) << { // << 语法糖，相当于doLast
     println "Publish $moduleName $version SUCCESS"
 }
 
-task publishSnapshot(dependsOn: [cleanAll, jar, uploadArchives]) << {
+task publishSnapshot(dependsOn: [cleanAll, jar, uploadArchives]) << { // << 语法糖，相当于doLast
     println "Publish $moduleName $version SUCCESS"
 }
 
@@ -124,6 +116,14 @@ gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.hasTask(publishSnapshot) && !version.endsWith('-SNAPSHOT')) {
         version += '-SNAPSHOT'
     }
+    
+    jar {
+        manifest {
+            attributes("Specification-Title": moduleName, "Specification-Version": version)
+            attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildTimestamp")
+        }
+    }
+
     uploadArchives {
         repositories {
             mavenDeployer {
