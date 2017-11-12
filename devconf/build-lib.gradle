@@ -119,7 +119,7 @@ gradle.taskGraph.whenReady { taskGraph ->
     
     jar {
         manifest {
-            attributes("Specification-Title": moduleName, "Specification-Version": "$version-$distBuildNumber")
+            attributes("Specification-Title": moduleName, "Specification-Version": version)
             attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildTimestamp")
         }
     }
