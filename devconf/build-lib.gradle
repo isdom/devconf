@@ -1,5 +1,3 @@
-apply plugin: 'maven'
-
 buildDir = "../public/${moduleName}"
 
 ext {
@@ -8,12 +6,17 @@ ext {
     Properties props = new Properties()
     props.load(new FileInputStream("${System.properties['user.home']}/ivysettings-file.properties"))
     userName = props['user.name']
-    password = props['user.passwd']
+    passWord = props['user.passwd']
     uploadUrlbase=props['upload.urlbase']
 }
 
 allprojects {
+    if (!project.hasProperty('publishRelease') && !project.version.endsWith('-SNAPSHOT')) {
+        project.version += '-SNAPSHOT'
+    }
+    
     apply plugin: 'java'
+    apply plugin: 'maven-publish'
     apply plugin: 'idea'
     apply plugin: 'eclipse'
     configurations {
@@ -88,6 +91,13 @@ compileJava.doFirst {
     println 'Compile Java and copy resources'
 }
 
+jar {
+    manifest {
+        attributes("Specification-Title": moduleName, "Specification-Version": "$version-$distBuildNumber")
+        attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildTimestamp")
+    }
+}
+
 task sourceJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allJava
@@ -98,64 +108,36 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-task publish(dependsOn: [cleanAll, jar, uploadArchives]) << { // << 语法糖，相当于doLast
-    println "Publish $moduleName $version SUCCESS"
-}
-
-task publishSnapshot(dependsOn: [cleanAll, jar, uploadArchives]) << { // << 语法糖，相当于doLast
-    println "Publish $moduleName $version SUCCESS"
-}
-
-artifacts {
-    archives jar
-    archives sourceJar
-    archives javadocJar
-}
-
-gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.hasTask(publishSnapshot) && !version.endsWith('-SNAPSHOT')) {
-        version += '-SNAPSHOT'
-    }
-    
-    jar {
-        manifest {
-            attributes("Specification-Title": moduleName, "Specification-Version": "$version-$distBuildNumber")
-            attributes("Implementation-Title": moduleName, "Implementation-Version": "$version-$distBuildNumber-$distBuildTimestamp")
-        }
-    }
-
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                repository(url: uploadUrlbase+'/repositories/releases') {
-                    authentication(userName: userName, password: password)
-                }
-                snapshotRepository(url: uploadUrlbase+'/repositories/snapshots') {
-                    authentication(userName: userName, password: password)
-                }
-                uniqueVersion = false
-                pom.artifactId = moduleName
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId     project.group
+            artifactId  project.moduleName
+            version     project.version
+            
+            //若是war包，就写components.web,若是jar包，就写components.java 
+            from components.java
+            
+            artifact sourceJar {
+                classifier 'sources'
+            }
+            artifact javadocJar {
+                classifier 'javadoc'
             }
         }
     }
-}
-
-
-// Add a temporary new optional scope
-Conf2ScopeMappingContainer scopeMappings = project.conf2ScopeMappings
-scopeMappings.addMapping(MavenPlugin.COMPILE_PRIORITY + 2, project.configurations.getByName("optional"), "optional")
-// Add a hook to replace the optional scope
-project.tasks.withType(Upload).each { applyToUploadTask(project, it) }
-
-private void applyToUploadTask(Project project, Upload upload) {
-    upload.repositories.withType(PomFilterContainer).each { applyToPom(project, it) }
-}
-
-private void applyToPom(Project project, PomFilterContainer pomContainer) {
-    pomContainer.pom.whenConfigured { MavenPom pom ->
-        pom.dependencies.findAll { it.scope == "optional" }.each {
-            it.scope = "compile"
-            it.optional = true
+    repositories {
+        maven {
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url = uploadUrlbase+'/repositories/snapshots'
+            } else {
+                url = uploadUrlbase+'/repositories/releases'
+            }
+    
+            credentials {
+                username userName
+                password passWord
+            }
         }
     }
 }
