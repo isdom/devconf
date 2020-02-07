@@ -72,12 +72,12 @@ tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
 
-task cleanAll << {
+task cleanAll {
     println "Clean project.."
     delete buildDir
 }
 
-task init << {
+task init {
     println '+---------------------------------------------------+'
     println '|                                                   |'
     println "| B U I L D I N G $moduleName $version"
