@@ -78,11 +78,13 @@ task cleanAll {
 }
 
 task init {
-    println '+---------------------------------------------------+'
-    println '|                                                   |'
-    println "| B U I L D I N G $moduleName $version"
-    println '|                                                   |'
-    println '+---------------------------------------------------+'
+    doLast {
+        println '+---------------------------------------------------+'
+        println '|                                                   |'
+        println "| B U I L D I N G $moduleName $version"
+        println '|                                                   |'
+        println '+---------------------------------------------------+'
+    }   
 }
 
 compileJava.dependsOn init
