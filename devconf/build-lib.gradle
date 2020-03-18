@@ -25,10 +25,10 @@ allprojects {
     }
     repositories {
         maven {
-            url "http://repo.jocean.org/nexus/content/groups/public"
+            url "https://maven.aliyun.com/repository/central"
         }
         maven {
-            url "https://maven.aliyun.com/repository/central"
+            url "http://repo.jocean.org/nexus/content/groups/public"
         }
         mavenCentral()
     }
